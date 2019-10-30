@@ -2,7 +2,7 @@
 
 ## Database Systems - Assignment 3
 
-The bash script named `20171171.sh`, which, if given two command-line arguments runs logging (The two arguments being input file and x), and if given only one argument, runs recovery, and produces the output.
+The bash script named `20171171.sh`, which, if given two command-line arguments runs logging (The two arguments being input file and x), and if given only one argument, runs recovery, and produces the output.
 
 - Logging
 
