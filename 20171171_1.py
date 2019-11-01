@@ -1,9 +1,9 @@
 import sys
 
-disk = dict()
-main_mem = dict()
-local_var = dict()
-write_que = dict()
+disk = {}
+main_mem = {}
+local_var = {}
+write_que = {}
 out_lines = []
 transactions = []
 
@@ -23,33 +23,34 @@ def write_to_output(log_record):
 
 def execute_action(action, transaction):
     global disk, main_mem, local_var, write_que
-    
-    if 'READ' in action:
-        arg_list = action.split('(')[1].split(')')[0].split(',')
-        arg_list = list(map(lambda x: x.split()[0], arg_list))
-        if arg_list[0] not in main_mem:
-            main_mem[arg_list[0]] = disk[arg_list[0]]
-        local_var[arg_list[1]] = main_mem[arg_list[0]]
-        
-    elif 'WRITE' in action:
-        arg_list = action.split('(')[1].split(')')[0].split(',')
-        arg_list = list(map(lambda x: x.split()[0], arg_list))
-        old_val = disk[arg_list[0]] if arg_list[0] not in main_mem else main_mem[arg_list[0]]
-        main_mem[arg_list[0]] = local_var[arg_list[1]]
-        write_que[transaction].append(arg_list[0])
-        write_to_output('<' + transaction + ', ' + arg_list[0] + ', ' + str(old_val) + '>')
-    
-    elif 'OUTPUT' in action:
-        attr = action.split('(')[1].split(')')[0]
-        disk[attr] = main_mem[attr]
-        write_que[transaction].remove(attr)
-        if len(write_que[transaction]) == 0:
-            write_to_output('<COMMIT ' + transaction + '>')
-    
-    elif ':=' in action:
-        action = action.split(':=')
-        action = list(map(lambda x: x.split()[0], action))
-        local_var[action[0]] = eval(action[1], local_var)
+
+    if ':=' in action:
+        var, expr = [x.strip() for x in action.split(':=')]
+        local_var[var] = eval(expr, local_var)
+    else:
+        arg_list = [x.strip() for x in action.split('(')[1].strip(')').split(',')]
+        attr = arg_list[0]
+        var = None if len(arg_list) == 1 else arg_list[1]
+
+        if 'READ' in action:
+            if attr not in main_mem:
+                main_mem[attr] = disk[attr]
+            local_var[var] = main_mem[attr]
+        elif 'WRITE' in action:
+            if attr not in main_mem:
+                main_mem[attr] = disk[attr]
+            old_attr_val = main_mem[attr]
+            main_mem[attr] = local_var[var]
+            write_que[transaction].append(attr)
+            write_to_output('<' + transaction + ', ' + attr + ', ' + str(old_attr_val) + '>')
+        elif 'OUTPUT' in action:
+            disk[attr] = main_mem[attr]
+            write_que[transaction].remove(attr)
+            if not write_que[transaction]:
+                write_to_output('<COMMIT ' + transaction + '>')
+        else:
+            print('Invalid action', action, 'in transaction', transaction)
+            exit(1)
 
 def round_robin(transactions, quantum):
     global write_que
@@ -87,14 +88,12 @@ if __name__ == '__main__':
             continue
         if not fill_disk:
             line = line.split()
-            i = 0
-            while i < len(line):
+            for i in range(0, len(line), 2):
                 disk[line[i]] = int(line[i + 1])
-                i += 2
             fill_disk = True
             continue
-        transactions[trans_cnt - 1].append(line)
-    
+        transactions[trans_cnt - 1].append(line.strip())
+
     round_robin(transactions, time_quantum)
 
     with open(OUT_FILE, 'w') as f:
