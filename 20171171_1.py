@@ -41,13 +41,13 @@ def execute_action(action, transaction):
                 main_mem[attr] = disk[attr]
             old_attr_val = main_mem[attr]
             main_mem[attr] = local_var[var]
-            write_que[transaction].append(attr)
+            if attr not in write_que[transaction]:
+                write_que[transaction].append(attr)
             write_to_output('<' + transaction + ', ' + attr + ', ' + str(old_attr_val) + '>')
         elif 'OUTPUT' in action:
             disk[attr] = main_mem[attr]
-            write_que[transaction].remove(attr)
-            if not write_que[transaction]:
-                write_to_output('<COMMIT ' + transaction + '>')
+            if attr in write_que[transaction]:
+                write_que[transaction].remove(attr)
         else:
             print('Invalid action', action, 'in transaction', transaction)
             exit(1)
@@ -71,6 +71,8 @@ def round_robin(transactions, quantum):
                 execute_action(transactions[i][instr_cnt[i]], trans_name[i])
                 instr_cnt[i] += 1
                 if instr_cnt[i] == len(transactions[i]):
+                    if not write_que[trans_name[i]]:
+                        write_to_output('<COMMIT ' + trans_name[i] + '>')
                     trans_fin += 1
 
 if __name__ == '__main__':

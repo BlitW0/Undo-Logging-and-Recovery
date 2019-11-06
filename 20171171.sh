@@ -7,5 +7,5 @@ elif [[ $# -eq 1 ]]; then
 else
     echo "Invalid number of arguments"
     echo "Usage for part1: ./20171171.sh <input file> <time quantum>"
-    echo "Usage for part2: ./20171171 <input file>"
+    echo "Usage for part2: ./20171171.sh <input file>"
 fi
